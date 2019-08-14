@@ -1,0 +1,16 @@
+{
+    "name": "OpenMageModuleFostering/Pepperjam_Network",
+    "type": "magento-module",
+    "license": "EULA",
+    "homepage": "",
+    "description": "Please use the uninstall button in the Pepperjam Network extension configuration settings.  Using this uninstall method may cause issues after the extension is removed.",
+    "authors": [
+    {
+        "name": "Philip Preston",
+        "email": "phpreston@pepperjam.com"
+    }
+],
+    "suggest": {
+        "magento-hackathon/magento-composer-installer": "*"
+    }
+}
