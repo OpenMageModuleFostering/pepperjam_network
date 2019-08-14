@@ -3,11 +3,11 @@
     "type": "magento-module",
     "license": "EULA",
     "homepage": "",
-    "description": "Please use the uninstall button in the Pepperjam Network extension configuration settings.  Using this uninstall method may cause issues after the extension is removed.",
+    "description": "Please use the "Prepare for Uninstall" button in the Pepperjam Network extension configuration settings before uninstalling the extension. Failure to do so may cause issues after the extension is removed.",
     "authors": [
     {
         "name": "Philip Preston",
-        "email": "phpreston@pepperjam.com"
+        "email": "ppreston@corp.pepperjam.com"
     }
 ],
     "suggest": {

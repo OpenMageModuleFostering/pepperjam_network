@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright (c) 2016 Pepperjam Network.
  *
@@ -14,9 +15,7 @@
  * @license     http://assets.pepperjam.com/legal/magento-connect-extension-eula.pdf  Pepperjam Network Magento Extensions End User License Agreement
  *
  */
-
-class Pepperjam_Network_Helper_Data extends Mage_Core_Helper_Abstract
-{
+class Pepperjam_Network_Helper_Data extends Mage_Core_Helper_Abstract {
 	/** value for the source cookie */
 	const SOURCE_KEY_VALUE_EBAY = 'eean';
 	const SOURCE_KEY_VALUE_PEPPERJAM = 'pepperjam';
@@ -28,8 +27,7 @@ class Pepperjam_Network_Helper_Data extends Mage_Core_Helper_Abstract
 	 * @param array $params
 	 * @return string
 	 */
-	public function buildBeaconUrl(array $params)
-	{
+	public function buildBeaconUrl(array $params) {
 		return Mage::helper('pepperjam_network/config')->getBeaconBaseUrl() . '?' .
 			http_build_query($params);
 	}
@@ -40,8 +38,7 @@ class Pepperjam_Network_Helper_Data extends Mage_Core_Helper_Abstract
 	 * each website.
 	 * @return array
 	 */
-	public function getAllProgramIds()
-	{
+	public function getAllProgramIds() {
 		$config = Mage::helper('pepperjam_network/config');
 		return array_unique(array_filter(array_map(
 			function ($website) use ($config) {
@@ -61,8 +58,7 @@ class Pepperjam_Network_Helper_Data extends Mage_Core_Helper_Abstract
 	 * @param  string $programId
 	 * @return Mage_Core_Model_Store|null
 	 */
-	public function getStoreForProgramId($programId)
-	{
+	public function getStoreForProgramId($programId) {
 		$config = Mage::helper('pepperjam_network/config');
 		// Check for the default store view to be this program id first, will match
 		// when the program id is set at the global level.
@@ -88,8 +84,7 @@ class Pepperjam_Network_Helper_Data extends Mage_Core_Helper_Abstract
 	 * @param  string $programId
 	 * @return Mage_Core_Model_Store[]
 	 */
-	public function getAllStoresForProgramId($programId)
-	{
+	public function getAllStoresForProgramId($programId) {
 		$config = Mage::helper('pepperjam_network/config');
 		return array_filter(
 			Mage::app()->getStores(),
@@ -106,9 +101,8 @@ class Pepperjam_Network_Helper_Data extends Mage_Core_Helper_Abstract
 	 * @return string
 	 * @codeCoverageIgnore
 	 */
-	public function parseBoolToYesNo($value)
-	{
-		return $value?'yes':'no';
+	public function parseBoolToYesNo($value) {
+		return $value ? 'yes' : 'no';
 	}
 
 	/**
@@ -117,24 +111,50 @@ class Pepperjam_Network_Helper_Data extends Mage_Core_Helper_Abstract
 	 *
 	 * @return string
 	 */
-	public function getSourceCookieName()
-	{
+	public function getSourceCookieName() {
 		$key = Mage::helper('pepperjam_network/config')->getSourceKeyName();
 
-		return self::SOURCE_COOKIE_PREFIX.$key;
+		return self::SOURCE_COOKIE_PREFIX . $key;
 	}
 
 	/**
-	 * True if the cookie exists and has a value of SOURCE_KEY_VALUE
+	 * helper function to take the source key name set in the admin panel
+	 * and prepend a string to create a unique name for the cookie
+	 *
+	 * @return string
+	 */
+	public function getClickCookieName() {
+		$key = Mage::helper('pepperjam_network/config')->getClickKeyName();
+
+		return self::SOURCE_COOKIE_PREFIX . $key;
+	}
+
+	/**
+	 * helper function to take the source key name set in the admin panel
+	 * and prepend a string to create a unique name for the cookie
+	 *
+	 * @return string
+	 */
+	public function getPublisherCookieName() {
+		$key = Mage::helper('pepperjam_network/config')->getPublisherKeyName();
+
+		return self::SOURCE_COOKIE_PREFIX . $key;
+	}
+
+	/**
+	 * True if the cookie exists and has a value of SOURCE_KEY_VALUE_X
 	 * False otherwise
 	 *
 	 * @return bool
 	 */
-	public function isValidCookie()
-	{
-		$cookie = $this->getSourceCookieName();
-		$value = Mage::getModel('core/cookie')->get($cookie);
-		return in_array($value, array(self::SOURCE_KEY_VALUE_PEPPERJAM, self::SOURCE_KEY_VALUE_EBAY));
+	public function isValidCookie() {
+		$key = Mage::helper('pepperjam_network/config')->getSourceKeyName();
+
+		return array_key_exists(self::SOURCE_COOKIE_PREFIX . $key, $_COOKIE);
+	}
+
+	public function validSourceValues() {
+		return array(self::SOURCE_KEY_VALUE_EBAY, self::SOURCE_KEY_VALUE_PEPPERJAM);
 	}
 
 	/**
@@ -142,8 +162,7 @@ class Pepperjam_Network_Helper_Data extends Mage_Core_Helper_Abstract
 	 * @param  Mage_Sales_Model_Order $order
 	 * @return boolean This is the first order by this customer (email address)
 	 */
-	public function isNewToFile(Mage_Sales_Model_Order $order)
-	{
+	public function isNewToFile(Mage_Sales_Model_Order $order) {
 		// Customers are being identified by emails
 		$customerEmail = $order->getCustomerEmail();
 
@@ -160,8 +179,7 @@ class Pepperjam_Network_Helper_Data extends Mage_Core_Helper_Abstract
 	 * @param  Mage_Sales_Model_Order_Item $item Order Item
 	 * @return int Category ID
 	 */
-	public function getCommissioningCategory(Mage_Sales_Model_Order_Item $item)
-	{
+	public function getCommissioningCategory(Mage_Sales_Model_Order_Item $item) {
 		$category = $item->getProduct()->getCommissioningCategory();
 		if ($category == '' || $category == null) {
 
@@ -174,5 +192,13 @@ class Pepperjam_Network_Helper_Data extends Mage_Core_Helper_Abstract
 		}
 
 		return $category;
+	}
+
+	public function getCookieValue($cookieName) {
+		if ($_COOKIE[$cookieName]) {
+			return $_COOKIE[$cookieName];
+		}
+
+		return false;
 	}
 }

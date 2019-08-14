@@ -14,27 +14,13 @@
  * @license     http://assets.pepperjam.com/legal/magento-connect-extension-eula.pdf  Pepperjam Network Magento Extensions End User License Agreement
  */
 
-class Pepperjam_Network_Model_Feed_Order_Dynamic extends Pepperjam_Network_Model_Feed_Order_Abstract
-{
-	/**
-	 * @see parent::_getItems
-	 */
-	protected function _getItems()
-	{
-		return $this->_getItemizedItems();
-	}
+$installer = $this;
+$installer->startSetup();
 
-	/**
-	 * @see parent::_getFeedFields
-	 */
-	protected function _getFeedFields()
-	{
-		if ($this->_feedType == self::ITEMS_NEW) {
-			$fields = Mage::helper('pepperjam_network/config')->getDynamicOrderFeedFields();
-		} else {
-			$fields = Mage::helper('pepperjam_network/config')->getDynamicOrderCorrectionFeedFields();
-		}
+$installer->setConfigData('pepperjam/pepperjam_network/order_correction_feed/last_run_time', Mage::getStoreConfig('pepperjam/pepperjam_network/feed/last_run_time'));
 
-		return explode(',', $fields);
-	}
-}
+$installer->setConfigData('pepperjam/pepperjam_network/order_feed/last_run_time', time());
+$installer->setConfigData('pepperjam/pepperjam_network/order_correction_feed/last_run_time', Mage::getStoreConfig('pepperjam/pepperjam_network/feed/last_run_time'));
+$installer->deleteConfigData('pepperjam/pepperjam_network/feed/last_run_time');
+
+$installer->endSetup();

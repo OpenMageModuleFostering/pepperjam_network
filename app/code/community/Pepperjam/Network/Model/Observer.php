@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright (c) 2016 Pepperjam Network.
  *
@@ -13,18 +14,18 @@
  * @copyright   Copyright (c) 2016 Pepperjam Network. (http://www.pepperjam.com/)
  * @license     http://assets.pepperjam.com/legal/magento-connect-extension-eula.pdf  Pepperjam Network Magento Extensions End User License Agreement
  */
-
-class Pepperjam_Network_Model_Observer
-{
+class Pepperjam_Network_Model_Observer {
 	const PRODUCT_LOG_MESSAGE = 'Generating Product feed: program id %s, default store view: %s';
+
 	/**
 	 * This observer method is the entry point to generating product feed when
 	 * the CRONJOB 'pepperjam_network_generate_product_feed' run.
 	 * @return void
 	 */
-	public function createProductFeed()
-	{
-		if (!Mage::getStoreConfig('pepperjam/pepperjam_network/product_feed_enabled')) {
+	public function createProductFeed() {
+		$config = Mage::helper('pepperjam_network/config');
+
+		if (!$config->isProductFeedEnabled()) {
 			Mage::log(Mage::helper('pepperjam_network')->__('Product feed disabled'), Zend_Log::NOTICE);
 			return;
 		}
@@ -38,36 +39,81 @@ class Pepperjam_Network_Model_Observer
 			);
 
 			Mage::getModel('pepperjam_network/feed_product', array(
-				'store' => $store
+				'store' => $store,
 			))->generateFeed();
 		}
 	}
+
 	/**
 	 * Generate the order corrected feed.
 	 * @return self
 	 */
-	public function createCorrectedOrdersFeed()
-	{
-		if (!Mage::getStoreConfig('pepperjam/pepperjam_network/order_feed_enabled')) {
+	public function createCorrectedOrdersFeed() {
+		$config = Mage::helper('pepperjam_network/config');
+
+		if (!$config->isAttributionEnabled() || !$config->isOrderCorrectionFeedEnabled()) {
 			Mage::log(Mage::helper('pepperjam_network')->__('Corrected order feed disabled'), Zend_Log::NOTICE);
 			return;
 		}
 
 		$startTime = time();
 
-		$feedAlias = 'feed_order_'.Mage::helper('pepperjam_network/config')->getOrderType();
+		$feedAlias = 'feed_order_' . $config->getOrderType();
 
-		Mage::log(sprintf('[%s] Generating %s feed', __CLASS__, $feedAlias), Zend_Log::INFO);
+		Mage::log(sprintf('[%s] Generating %s correction feed', __CLASS__, $feedAlias), Zend_Log::INFO);
 
 		$helper = Mage::helper('pepperjam_network');
 		foreach ($helper->getAllProgramIds() as $programId) {
 			Mage::getModel(
 				"pepperjam_network/{$feedAlias}",
 				array('store' => $helper->getStoreForProgramId($programId), 'start_time' => $startTime)
-			)->generateFeed();
+			)->generateFeed('corrections');
 		}
 
-		Mage::helper('pepperjam_network/config')->updateOrderLastRunTime($startTime);
+		Mage::helper('pepperjam_network/config')->updateOrderCorrectionLastRunTime($startTime);
+		return $this;
+	}
+
+	/**
+	 * Generate the order feed.
+	 * @return self
+	 */
+	public function createOrdersFeed() {
+		$config = Mage::helper('pepperjam_network/config');
+
+		$startTime = time();
+
+		$feedAlias = 'feed_order_' . $config->getOrderType();
+
+		Mage::log("[" . __CLASS__ . "] Generating $feedAlias feed", Zend_Log::INFO);
+
+		$helper = Mage::helper('pepperjam_network');
+		foreach ($helper->getAllProgramIds() as $programId) {
+			$feedModel = Mage::getModel(
+				"pepperjam_network/$feedAlias",
+				array('store' => $helper->getStoreForProgramId($programId), 'start_time' => $startTime)
+			)->generateFeed('new');
+		}
+
+		$config->updateOrderLastRunTime($startTime);
+
+		return $this;
+	}
+
+	/**
+	 * Transfer attribution attributes to new order after edit
+	 * @param  Varien_Event_Observer $observer
+	 * @return self
+	 */
+	public function transferAttribution($observer) {
+		$order = $observer->getEvent()->getData('order');
+		if (!is_null($order->getRelationParentId())) {
+			$parentOrder = Mage::getModel('sales/order')->load($order->getRelationParentId());
+
+			$order->setNetworkSource($parentOrder->getNetworkSource());
+			$order->setNetworkClickId($parentOrder->getNetworkClickId());
+			$order->setNetworkPublisherId($parentOrder->getNetworkPublisherId());
+		}
 
 		return $this;
 	}
